@@ -1,0 +1,57 @@
+name: X Scraper
+
+on:
+  workflow_dispatch:
+    inputs:
+      username:
+        description: "X username, for example NASA"
+        required: true
+        type: string
+
+      limit:
+        description: "Number of posts"
+        required: false
+        default: "5"
+        type: string
+
+jobs:
+
+  scrape:
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 5
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Playwright Chromium
+        run: |
+          python -m playwright install --with-deps chromium
+
+      - name: Run scraper
+        run: |
+          python scraper.py \
+            --username "${{ inputs.username }}" \
+            --limit "${{ inputs.limit }}" \
+            --output result.json
+
+      - name: Upload result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scraper-result
+          path: result.json
+          retention-days: 1
